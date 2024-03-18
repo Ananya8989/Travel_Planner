@@ -1,0 +1,16 @@
+ Widget old(){
+return Scaffold( appBar: AppBar(backgroundColor: Colors.cyan,title:  Text(da), centerTitle: true, toolbarHeight: 35,),body:Column(
+      children:<Widget>[Padding(padding: const EdgeInsets.only(top:16,bottom:5,),child:
+        Container( decoration: BoxDecoration(border: Border.all(color:Colors.cyan)),
+         child:TextField( controller: cont1,  
+            decoration: const InputDecoration( labelText: "New Destination",iconColor: Color.fromARGB(255, 2, 17, 91),
+            prefixIcon: Icon(Icons.add_task),),
+      ),)),Container( alignment: Alignment.topRight,
+         child:IconButton(onPressed: (){
+          destAdd(cont1.text);
+         }, 
+           icon:const Icon(Icons.add_box_outlined),iconSize: 23,
+           color: const Color.fromARGB(255, 6, 214, 218),),), 
+       Expanded(child:info()),
+       ]));
+   }
