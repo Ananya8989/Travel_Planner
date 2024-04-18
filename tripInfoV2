@@ -1,0 +1,193 @@
+import 'package:flutter/material.dart';
+import 'package:travel_app/database.dart';
+import 'package:travel_app/main.dart';
+import 'dart:io';
+import 'package:travel_app/dests.dart';
+import 'package:travel_app/trip.dart';
+import 'package:travel_app/day.dart';
+
+import 'dart:developer' as developer;
+void main() {
+ runApp( const TripNew(title:"Australia",days:3));
+}
+
+class TripNew extends StatelessWidget {
+  final String title;
+  final int days;
+  const TripNew({required this.title,required this.days, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'To-Do List',
+      theme: ThemeData(
+        primarySwatch: Colors.cyan,scaffoldBackgroundColor:Color.fromARGB(255, 249, 249, 249),
+        textTheme: const TextTheme(titleMedium:TextStyle(color: Colors.black))
+      ),
+      home: TripInfo(title,days));
+  }
+}
+
+class TripInfo extends StatefulWidget{
+  String s = "";
+  int days = 0;
+  TripInfo(String t,int d){
+   s= t;
+   days = d;
+  }
+  _TripInfoState createState(){ 
+    return new _TripInfoState(s,days);}
+    
+}
+
+class _TripInfoState extends State<TripInfo>{
+  String da = "";
+  int day = 0;
+  _TripInfoState(String s,int d){
+    da = s;
+    day = d;
+  }
+
+ late DatabaseHelper dbh;
+  List <Dests> destList = [];
+  List <Day> dayList = [];
+  TextEditingController cont1 = TextEditingController();
+  TextEditingController contNew = TextEditingController();
+   PageController _controller = PageController(initialPage: 1);
+  List<int> _lenght = [0, 1, 2];
+  @override
+ void initState(){
+    super.initState();
+    dbh = DatabaseHelper();
+      _controller = PageController(initialPage: 1);
+    dbh.initDB().whenComplete(() async {
+      setState(() {});
+    });
+    
+  }
+   
+ @override
+  Widget build(BuildContext context){
+    
+    return Scaffold( appBar: AppBar(backgroundColor: Colors.cyan,title:  Text(da), centerTitle: true, toolbarHeight: 35,titleTextStyle:TextStyle(color: Colors.white, fontSize: 20),actions: <Widget>[
+          ],),
+          body: Column(children: [Expanded(child:pageView())]));
+  }
+  Widget pageView(){
+    return RefreshIndicator(onRefresh: _refresh, child:FutureBuilder(future:dbh.getDay(),builder: (BuildContext context,
+     AsyncSnapshot<List<Day>> snapshot){
+      developer.log(""+snapshot.hasData.toString());
+      if(snapshot.hasData){
+        developer.log("hasData");
+      return  PageView.builder(
+                  controller: _controller,
+      itemCount: day,itemBuilder: (context, i) {
+        developer.log("pageVie"+i.toString());
+        
+        return page(i);
+        
+      }
+      );
+      }          
+       else{
+        return CircularProgressIndicator();
+       }}));
+  }
+  
+   Widget page(int i){
+    developer.log("page"+i.toString());
+    return Scaffold(appBar: AppBar(title: Text("Day "+(i+1).toString()),
+    titleTextStyle:TextStyle(color: Colors.white, fontSize: 20),
+    backgroundColor: Color.fromARGB(246, 255, 144, 40),),
+    body:Column(children: [Padding(padding: const EdgeInsets.only(top: 16.0),child:
+        Container( decoration: BoxDecoration(border: Border.all(color:Colors.cyan)),
+         child:TextField( controller: cont1,  
+            decoration: const InputDecoration( labelText: "Add Destination",iconColor: Color.fromARGB(255, 2, 17, 91),
+            prefixIcon: Icon(Icons.pin_drop_outlined),),
+      ),)),
+        Container( alignment: Alignment.topRight,
+         child:IconButton(onPressed: (){destAdd(cont1.text,(i+1).toString());}, 
+           icon:const Icon(Icons.add_box_outlined),iconSize: 23,
+           color: const Color.fromARGB(255, 6, 214, 218),),
+     ),Expanded(child:info(i))]));
+
+     
+   }
+  Widget info(int k){
+    return RefreshIndicator(onRefresh: _refresh, child:FutureBuilder(future:dbh.getDest(),builder: (BuildContext context,
+     AsyncSnapshot<List<Dests>> snapshot){
+      developer.log(""+snapshot.hasData.toString());
+      if(snapshot.hasData){
+        developer.log("hasData");
+      return  ListView.builder(
+      itemCount: snapshot.data?.length,itemBuilder: (context, i) {
+          developer.log("k"+k.toString());
+          developer.log("snapdata"+snapshot.data![i].day);
+          if(k.toString()==snapshot.data![i].day){
+          
+        return ListTile(iconColor: Colors.white,
+         title: Text(snapshot.data![i].name), trailing: IconButton(
+                    icon: const Icon(Icons.delete_rounded,color: Colors.deepOrange,),
+                    onPressed: () => dbh.deleteDest(snapshot.data![i].name),
+                  ),);}
+      }
+      );
+        }          
+       else{
+        return CircularProgressIndicator();
+       }
+    
+    }
+    ));
+ }
+
+ 
+
+  
+
+Future<void> _refresh(){
+   dbh.initDB().whenComplete(() async {
+      setState(() {});
+    });
+  return Future.delayed(const Duration(seconds:1));
+ }
+
+ void addDay(String s){
+  developer.log("entered add");
+    setState(() {
+       dayList.add(Day(name:"Day" + destList.length.toString(),done:0,trip:s));
+        developer.log("added 1");
+      });
+      addD(Day(name:"Day" + (destList.length-1).toString(),done:0,trip:s));
+      developer.log("added 2");
+ }
+ Future<int> addD(Day d) async {
+    developer.log("added 3");
+    return await dbh.setDay(d);
+  }
+
+  void destAdd(String s, String d){
+    developer.log("entered add");
+    developer.log("day"+d);
+    setState(() {
+       destList.add(Dests(name:s,done:0,pos:0,day:d));
+        developer.log("added 1");
+      });
+      add(Dests(name:s,done:0,pos:8, day:d));
+      developer.log("added 2");
+      cont1.clear();
+       }
+  Future<int> add(Dests d) async {
+    developer.log("added 3");
+    return await dbh.setDest(d);
+  }
+   void remove(int i) {
+      setState(() {
+      destList.elementAt(i).setDelete(1);
+      destList.removeAt(i);
+    });
+    initState();
+  }
+   
+}
